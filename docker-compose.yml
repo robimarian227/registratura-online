@@ -12,5 +12,5 @@ services:
       REGISTRY_LARGE_FILE_THRESHOLD: 104857600
     volumes:
       - ./data:/data
-      - D:/Registratura_Archive:/archive
+      - /mnt/d/Registratura_Archive:/archive
     restart: unless-stopped
