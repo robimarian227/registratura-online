@@ -1,0 +1,1 @@
+"""Digital Registry application package."""

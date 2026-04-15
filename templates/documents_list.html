@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="panel">
+    <h2>Cautare avansata</h2>
+    <form method="get" action="/documents" class="grid-form">
+        <label>Data de la
+            <input type="date" name="date_from" value="{{ filters.date_from }}">
+        </label>
+        <label>Data pana la
+            <input type="date" name="date_to" value="{{ filters.date_to }}">
+        </label>
+        <label>Expeditor
+            <input type="text" name="sender" value="{{ filters.sender }}" placeholder="Ex: Primaria">
+        </label>
+        <label>Subiect
+            <input type="text" name="subject" value="{{ filters.subject }}" placeholder="Ex: Contract">
+        </label>
+        <label>Tag
+            <input type="text" name="tag" value="{{ filters.tag }}" placeholder="Ex: urgent">
+        </label>
+        <button type="submit">Filtreaza</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Lista documente</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Data intrare</th>
+                <th>Expeditor</th>
+                <th>Subiect</th>
+                <th>Tag-uri</th>
+                <th>Fisier local</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in documents %}
+            <tr>
+                <td>{{ item.document_id }}</td>
+                <td>{{ item.entry_date }}</td>
+                <td>{{ item.sender }}</td>
+                <td>{{ item.subject }}</td>
+                <td>{{ ', '.join(item.tags) }}</td>
+                <td>
+                    <a href="/documents/{{ item.document_id }}/file">Deschide</a>
+                    <div class="path">{{ item.file_path }}</div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">Nu exista documente pentru criteriile selectate.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

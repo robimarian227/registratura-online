@@ -1,0 +1,16 @@
+services:
+  registratura:
+    build: .
+    container_name: registratura_digitala
+    ports:
+      - "8000:8000"
+    environment:
+      REGISTRY_APP_NAME: Registratura Digitala Interna
+      REGISTRY_ARCHIVE_ROOT: /archive
+      REGISTRY_DB_PATH: /data/registry.db
+      REGISTRY_UPLOAD_CHUNK_BYTES: 4194304
+      REGISTRY_LARGE_FILE_THRESHOLD: 104857600
+    volumes:
+      - ./data:/data
+      - D:/Registratura_Archive:/archive
+    restart: unless-stopped

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="panel">
+    <h2>Inregistrare document nou</h2>
+    <p>
+        Upload-ul foloseste scriere secventiala in flux (streaming), ceea ce mentine
+        utilizarea de RAM constanta chiar si pentru fisiere mai mari de {{ large_file_threshold_mb }} MB.
+    </p>
+
+    <form method="post" action="/documents" enctype="multipart/form-data" class="grid-form">
+        <label>Data intrare
+            <input type="date" name="entry_date" value="{{ today }}" required>
+        </label>
+        <label>Expeditor
+            <input type="text" name="sender" required>
+        </label>
+        <label>Subiect
+            <input type="text" name="subject" required>
+        </label>
+        <label>Tag-uri (separate prin virgula)
+            <input type="text" name="tags" placeholder="contract, urgent, juridic">
+        </label>
+        <label>Fisier
+            <input type="file" name="file" required>
+        </label>
+        <button type="submit">Salveaza document</button>
+    </form>
+</section>
+{% endblock %}
