@@ -39,7 +39,11 @@
         <tbody>
             {% for item in documents %}
             <tr>
-                <td>{{ item.document_id }}</td>
+                <td>
+                    <strong>{{ item.document_id }}</strong>
+                    <br>
+                    <a href="/documents/{{ item.document_id }}/edit" style="font-size: 0.85rem; color: #0e7a6d;">Editează</a>
+                </td>
                 <td>{{ item.entry_date }}</td>
                 <td>{{ item.sender }}</td>
                 <td>{{ item.subject }}</td>

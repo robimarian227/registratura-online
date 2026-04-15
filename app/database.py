@@ -249,6 +249,59 @@ class Database:
             created_at=row["created_at"],
         )
 
+    def update_document_fields(
+        self,
+        document_id: int,
+        sender: str,
+        subject: str,
+        tags: list[str],
+    ) -> bool:
+        """Update mutable fields of a document record.
+
+        The document_id and entry_date are immutable (audit trail).
+
+        Args:
+            document_id: Stable document identifier (immutable).
+            sender: New sender value.
+            subject: New subject value.
+            tags: New tags list.
+
+        Returns:
+            bool: True if update succeeded, False if document not found.
+        """
+
+        normalized_tags = sorted({tag.strip().lower() for tag in tags if tag.strip()})
+
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "SELECT id FROM documents WHERE id = ?",
+                (document_id,),
+            )
+            if cursor.fetchone() is None:
+                return False
+
+            conn.execute(
+                "UPDATE documents SET sender = ?, subject = ? WHERE id = ?",
+                (sender.strip(), subject.strip(), document_id),
+            )
+
+            conn.execute(
+                "DELETE FROM document_tags WHERE document_id = ?",
+                (document_id,),
+            )
+
+            for tag in normalized_tags:
+                conn.execute("INSERT OR IGNORE INTO tags(name) VALUES (?)", (tag,))
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO document_tags(document_id, tag_id)
+                    SELECT ?, id FROM tags WHERE name = ?
+                    """,
+                    (document_id, tag),
+                )
+
+            return True
+
 
 def utc_now_iso() -> str:
     """Return current UTC timestamp in ISO-8601 format."""

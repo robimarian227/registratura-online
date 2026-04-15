@@ -185,3 +185,66 @@ def open_document_file(document_id: int):
         raise HTTPException(status_code=404, detail="Stored file is missing")
 
     return FileResponse(path=path, filename=record.original_filename)
+
+
+@app.get("/documents/{document_id}/edit")
+def edit_document_form(request: Request, document_id: int):
+    """Render the document edit form for admin modifications.
+
+    Args:
+        request: Active FastAPI request object.
+        document_id: Stable document identifier.
+
+    Raises:
+        HTTPException: If document not found.
+    """
+
+    record = repository.get_document_by_id(document_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="edit_form.html",
+        context={
+            "app_name": settings.app_name,
+            "document": record,
+        },
+    )
+
+
+@app.post("/documents/{document_id}/edit")
+def update_document(
+    document_id: int,
+    sender: str = Form(...),
+    subject: str = Form(...),
+    tags: str = Form(default=""),
+):
+    """Update mutable fields of an existing document record.
+
+    The document_id and entry_date are preserved (immutable audit trail).
+
+    Args:
+        document_id: Stable document identifier.
+        sender: Updated sender value.
+        subject: Updated subject value.
+        tags: Comma-separated tags.
+
+    Raises:
+        HTTPException: If document not found or update fails.
+    """
+
+    if not sender.strip() or not subject.strip():
+        raise HTTPException(status_code=400, detail="sender and subject are required")
+
+    success = repository.update_document_fields(
+        document_id=document_id,
+        sender=sender.strip(),
+        subject=subject.strip(),
+        tags=[token for token in tags.split(",")],
+    )
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return RedirectResponse(url="/documents", status_code=303)

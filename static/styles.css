@@ -100,3 +100,23 @@ th {
     margin-top: 0.35rem;
     word-break: break-all;
 }
+
+.info-block {
+    background: #f0f4f7;
+    border-left: 4px solid #0e7a6d;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 5px;
+}
+
+.info-block p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.info-block code {
+    background: #e7eef3;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: "Courier New", monospace;
+}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="panel">
+    <h2>Editare Document (ID: {{ document.document_id }})</h2>
+    
+    <div class="info-block">
+        <p><strong>Data înregistrării:</strong> {{ document.entry_date }}</p>
+        <p><strong>Fișier:</strong> {{ document.original_filename }}</p>
+        <p><strong>Cale arhivă:</strong> <code>{{ document.file_path }}</code></p>
+        <p><strong>Creat la:</strong> {{ document.created_at }}</p>
+    </div>
+
+    <form method="post" action="/documents/{{ document.document_id }}/edit" class="grid-form">
+        <label>Expeditor
+            <input type="text" name="sender" value="{{ document.sender }}" required>
+        </label>
+        <label>Subiect
+            <input type="text" name="subject" value="{{ document.subject }}" required>
+        </label>
+        <label>Tag-uri (separate prin virgula)
+            <input type="text" name="tags" value="{{ ', '.join(document.tags) }}">
+        </label>
+        <div style="grid-column: 1 / -1; display: flex; gap: 1rem;">
+            <button type="submit">Salvează modificări</button>
+            <a href="/documents" style="padding: 0.65rem; border: 1px solid var(--border); border-radius: 7px; text-decoration: none; color: var(--ink);">Anulează</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
