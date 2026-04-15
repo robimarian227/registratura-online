@@ -4,14 +4,6 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
-from uuid import uuid4
-
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-
-from app.config import load_settings
 from app.database import Database, DocumentRecord, utc_now_iso
 from app.storage import allocate_target_path, save_upload_streaming
 
@@ -151,7 +143,7 @@ async def create_document(
     )
 
     record = DocumentRecord(
-        document_id=str(uuid4()),
+        document_id=None,
         entry_date=parsed_date,
         sender=sender.strip(),
         subject=subject.strip(),
@@ -167,7 +159,7 @@ async def create_document(
 
 
 @app.get("/documents/{document_id}/file")
-def open_document_file(document_id: str):
+def open_document_file(document_id: int):
     """Serve a stored file by document identifier.
 
     Args:

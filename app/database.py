@@ -14,7 +14,7 @@ class DocumentRecord:
     """Persistence representation for a registry document.
 
     Attributes:
-        document_id: Stable public identifier (UUID string).
+        document_id: Stable public identifier (integer auto-increment).
         entry_date: Registry entry date.
         sender: Document sender.
         subject: Document subject.
@@ -25,7 +25,7 @@ class DocumentRecord:
         created_at: Creation timestamp (UTC, ISO-8601).
     """
 
-    document_id: str
+    document_id: int | None
     entry_date: date
     sender: str
     subject: str
@@ -69,7 +69,7 @@ class Database:
             conn.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS documents (
-                    id TEXT PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     entry_date TEXT NOT NULL,
                     sender TEXT NOT NULL,
                     subject TEXT NOT NULL,
@@ -85,7 +85,7 @@ class Database:
                 );
 
                 CREATE TABLE IF NOT EXISTS document_tags (
-                    document_id TEXT NOT NULL,
+                    document_id INTEGER NOT NULL,
                     tag_id INTEGER NOT NULL,
                     PRIMARY KEY (document_id, tag_id),
                     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
@@ -109,14 +109,13 @@ class Database:
         normalized_tags = sorted({tag.strip().lower() for tag in record.tags if tag.strip()})
 
         with self._connect() as conn:
-            conn.execute(
+            cursor = conn.execute(
                 """
                 INSERT INTO documents (
-                    id, entry_date, sender, subject, file_path, original_filename, file_size, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    entry_date, sender, subject, file_path, original_filename, file_size, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    record.document_id,
                     record.entry_date.isoformat(),
                     record.sender,
                     record.subject,
@@ -126,6 +125,8 @@ class Database:
                     record.created_at,
                 ),
             )
+            
+            record.document_id = cursor.lastrowid
 
             for tag in normalized_tags:
                 conn.execute("INSERT OR IGNORE INTO tags(name) VALUES (?)", (tag,))
@@ -198,7 +199,7 @@ class Database:
             rows = conn.execute(query, params).fetchall()
 
         return [
-            DocumentRecord(
+            DocumentRecord(int(row["id"])
                 document_id=row["id"],
                 entry_date=date.fromisoformat(row["entry_date"]),
                 sender=row["sender"],
@@ -211,8 +212,7 @@ class Database:
             )
             for row in rows
         ]
-
-    def get_document_by_id(self, document_id: str) -> DocumentRecord | None:
+int) -> DocumentRecord | None:
         """Return one document with tags by its identifier.
 
         Args:
@@ -226,7 +226,6 @@ class Database:
             SELECT d.*, GROUP_CONCAT(t.name, ', ') AS tag_list
             FROM documents d
             LEFT JOIN document_tags dt ON d.id = dt.document_id
-            LEFT JOIN tags t ON t.id = dt.tag_id
             WHERE d.id = ?
             GROUP BY d.id
         """
@@ -238,6 +237,7 @@ class Database:
             return None
 
         return DocumentRecord(
+            document_id=int(row["id"])
             document_id=row["id"],
             entry_date=date.fromisoformat(row["entry_date"]),
             sender=row["sender"],
