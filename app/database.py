@@ -199,8 +199,8 @@ class Database:
             rows = conn.execute(query, params).fetchall()
 
         return [
-            DocumentRecord(int(row["id"])
-                document_id=row["id"],
+            DocumentRecord(
+                document_id=int(row["id"]),
                 entry_date=date.fromisoformat(row["entry_date"]),
                 sender=row["sender"],
                 subject=row["subject"],
@@ -212,7 +212,8 @@ class Database:
             )
             for row in rows
         ]
-int) -> DocumentRecord | None:
+
+    def get_document_by_id(self, document_id: int) -> DocumentRecord | None:
         """Return one document with tags by its identifier.
 
         Args:
@@ -237,8 +238,7 @@ int) -> DocumentRecord | None:
             return None
 
         return DocumentRecord(
-            document_id=int(row["id"])
-            document_id=row["id"],
+            document_id=int(row["id"]),
             entry_date=date.fromisoformat(row["entry_date"]),
             sender=row["sender"],
             subject=row["subject"],
