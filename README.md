@@ -1,76 +1,94 @@
-# 🏛️ Registratură Digitală Internă
+# Registratură Digitală Internă
 
-![Python Version](https://img.shields.io/badge/python-3.12-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0+-green.svg)
-![SQLite](https://img.shields.io/badge/Database-SQLite-blue.svg)
-![Docker](https://img.shields.io/badge/Deployment-Docker-informational.svg)
+Aplicație web pentru înregistrarea, arhivarea și căutarea documentelor administrative într-un mediu local. Proiectul este gândit pentru rulare on-premises, cu stocare fizică pe disc și metadate persistate în SQLite.
 
-Aceasta este o aplicație internă pentru gestiunea și arhivarea electronică a documentelor administrative (Registratură). Proiectul este construit pe o arhitectură ușoară și eficientă, rulând local, cu un accent deosebit pe **utilizarea minimă a memoriei RAM** la transferul fișierelor masive și pe o structură a bazei de date **strict normalizată**.
+## Logică de funcționare
 
----
+1. Utilizatorul încarcă un document împreună cu metadatele asociate: data intrării, expeditor, subiect și tag-uri.
+2. Backend-ul FastAPI primește fișierul prin streaming și îl scrie pe disc în blocuri fixe, pentru a limita consumul de memorie.
+3. Documentul este organizat automat în arhivă pe structura an/lună.
+4. Metadatele sunt salvate în SQLite într-o schemă normalizată, iar tag-urile sunt gestionate separat pentru a evita redundanța.
+5. Documentele pot fi căutate și filtrate după dată, expeditor, subiect și tag.
 
-## 🔬 Logica Soluției (Input -> Procesare -> Output)
+## Arhitectură
 
-### 📥 Input
-*   **Metadate Extrase:** Data de înregistrare, informații despre expeditor, subiectul documentului, și o listă dinamică de etichete (tags).
-*   **Flux Binar:** Documentul fizic selectat pe front-end, expediat serverului prin POST de tip `multipart/form-data`.
+- Backend: FastAPI + Uvicorn
+- Frontend: Jinja2, fără framework JavaScript grele
+- Bază de date: SQLite
+- Stocare fișiere: filesystem local, configurabil prin variabile de mediu
+- Deploy: Docker și Docker Compose, compatibile cu Portainer
 
-### ⚙️ Procesare
-1.  **Receptarea Asincronă:** API-ul creat cu **FastAPI** interceptează fișierul.
-2.  **Streaming I/O pe Disc:** În loc să încarce tot documentul în memorie, acesta este scris parțial pe disc, în blocuri de 4 MB (configurabile). Acest algoritm previne sufocarea RAM-ului (*Out of Memory*), vital atunci când se procesează fișiere multimedia / PDF-uri de dimensiuni mari (> 100 MB).
-3.  **Alocare Dinamică:** Documentul este integrat ierarhic în arhiva principală (ex. `D:/Registratura_Archive/2026/04/`), cu redenumire securizată împotriva atacurilor de tip path-traversal.
-4.  **Normalizare Relatională:** Metadatele sunt înregistrate în baza de date locală **SQLite**, respectând riguros standardele de normalizare:
-    *   **Forma Normală 1 (1NF):** Atribute complet atomice.
-    *   **Forma Normală 2 (2NF):** Extragerea categoriilor repetitive (tag-uri) spre un tabel de referință (`tags`), cuplat prin `document_tags` la tabela principală `documents`. Astfel, evităm dependențele parțiale.
-5.  **Căutare Multicriterială:** Motoarele de interogare permit conjuncția logică de filtre multiple (dată, expeditor, subiect și tag exact).
+## Structura proiectului
 
-### 📤 Output
-*   **Interfață Web (Jinja2):** Listarea inteligentă a colecțiilor documentare cu facilitate de filtrare rapidă.
-*   **Static Endpoint:** Funcția care leagă interfața de fișierul fizic menținut în partiția locală, prin răspuns `FileResponse`.
+- `app/main.py` - rute HTTP și integrarea cu șabloanele Jinja2
+- `app/config.py` - încărcarea setărilor din mediu
+- `app/database.py` - acces SQLite și operații CRUD
+- `app/storage.py` - salvarea fișierelor în streaming și organizarea pe an/lună
+- `templates/` - interfață server-side pentru listare, upload și editare
+- `static/` - stilizare CSS
+- `docker-compose.yml` - rulare cu Docker/Portainer
+- `requirements.txt` - dependențe Python
 
----
+## Model de date
 
-## 🏗️ Arhitectura Proiectului
+Schema bazei de date respectă principiile de normalizare:
 
-*   `app/main.py`: Controller-ul principal; rute FastAPI și configurarea Jinja2 pentru randarea dinamică a paginilor (fără framekwork-uri front-end greoaie).
-*   `app/database.py`: Modelul nivelului de persistență și tranzacții SQLite.
-*   `app/storage.py`: Modul specializat pentru path-allocation și I/O optimizat.
-*   `templates/` & `static/`: Views-urile și fișierul CSS responsive, structurate ierarhic.
-*   `requirements.txt`: Setul minimal de dependențe.
+- `documents` conține datele atomice ale documentului: ID, data intrării, expeditor, subiect, cale fișier, nume original, dimensiune și timestamp.
+- `tags` păstrează lista de etichete unice.
+- `document_tags` leagă documentele de etichete prin relație many-to-many.
 
----
+Această structură respectă 1NF prin eliminarea grupurilor repetitive și 2NF prin separarea atributelor dependente de entități distincte.
 
-## 🚀 Instalare și Configurare
+## Instalare și rulare
 
-Variabilele principale sunt administrate prin fișierul `.env` sau prin variabile vizibile în nivelul OS / Docker.
+### Rulare locală
 
-### 1️⃣ Rulare via Docker (Portainer Ready) - Recomandat
-Implementarea a luat în considerare infrastructurile tip Docker/Portainer.
-1. Maparea adreselor locale se regăsește în fișierul `docker-compose.yml`.
-2. Rulează suita:
-   ```bash
-   docker compose up --build -d
-   ```
-3. Accesează browserul: `http://localhost:8000`
-
-### 2️⃣ Rulare Locală (Python Natival)
-Dacă preferi o execuție nativă pe Host (Windows via PowerShell):
 ```powershell
-# 1. Inițializează un mediu virtual
 python -m venv .venv
 .venv\Scripts\activate
-
-# 2. Instalează dependențele din repo
 pip install -r requirements.txt
-
-# 3. Pornește server-ul
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn app.main:app --host 127.0.0.1 --port 9010 --reload
 ```
 
----
+Aplicația va fi disponibilă la:
 
-## 🔒 Considerații de Securitate și Integritate
+```text
+http://127.0.0.1:9010
+```
 
-*   Nicio parolă sau literă hardcodată de mediu nu apare vizibil în nucleul aplicației - absolut totul fiind manipulat prin `pathlib` și variabile OS pentru maximă abstractizare.
-*   Interfețele blochează prelucrarea documentelor dacă lipsesc argumentele indispensabile.
-*   Recomandat ca, pentru uz public sau instanțe de producție, serverul să fie izolat prin intermediul unui Reverse Proxy suplimentar (ex: Nginx/Traefik cu TLS).
+### Rulare cu Docker
+
+```bash
+docker compose up --build -d
+```
+
+În configurația curentă, aplicația expune portul `9010` pe host.
+
+### Deploy în Portainer
+
+1. Creează un stack nou din repository.
+2. Setează `docker-compose.yml` ca fișier Compose.
+3. Apasă `Pull and redeploy` după fiecare actualizare.
+
+## Configurare
+
+Setările principale sunt controlate prin variabile de mediu:
+
+- `REGISTRY_APP_NAME`
+- `REGISTRY_ARCHIVE_ROOT`
+- `REGISTRY_DB_PATH`
+- `REGISTRY_UPLOAD_CHUNK_BYTES`
+- `REGISTRY_LARGE_FILE_THRESHOLD`
+
+Fișierul `.env.example` servește drept model pentru mediu local.
+
+## Securitate și operare
+
+- Nu sunt necesare credentiale sau secrete în cod.
+- ID-ul de înregistrare rămâne imutabil după creare.
+- Editarea administrativă modifică doar metadatele permise: expeditor, subiect și tag-uri.
+- Pentru producție, se recomandă reverse proxy cu TLS și control de acces.
+
+## Observații
+
+Pentru fișiere mari, aplicația folosește scriere în streaming, astfel încât memoria RAM să rămână stabilă chiar și la upload-uri de peste 100 MB.
