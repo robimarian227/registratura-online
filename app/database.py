@@ -227,6 +227,7 @@ class Database:
             SELECT d.*, GROUP_CONCAT(t.name, ', ') AS tag_list
             FROM documents d
             LEFT JOIN document_tags dt ON d.id = dt.document_id
+            LEFT JOIN tags t ON t.id = dt.tag_id
             WHERE d.id = ?
             GROUP BY d.id
         """
